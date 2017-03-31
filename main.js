@@ -1,35 +1,37 @@
 $(document).ready(function(){
 
-	var GameSession = function(level, diff){
-		this.level = 1;
-		this.speed = 1;
-		this.strict = false;
+	var GameSession = function(){
+		this.moves = [];
+		this.level = 0;
+		this.strict = false;	
+		this.replaySpeed = 1;
+		this.blinkDur = 0.5;
+
+		this.addMove = function(){
+			var newMove = Math.floor(Math.random() * (5 - 1) + 1);
+			this.moves.push(newMove);
+		}; 
 
 		this.nextLevel = function(){
 			this.level++;
-			if(this.level % 3 === 0)
-				this.speed += 0.25;
-		};	 
+			this.replaySpeed = Math.min(5, this.replaySpeed + 0.25);
+			this.blinkDur = Math.max(0.1, this.blinkDur - 0.025);
+			this.addMove();
+		};
+
+		this.init = function(level){
+			for(var i=0; i < level; i++)
+				this.nextLevel();
+		};
 	};
 
 	var Turn = function(numberOfMoves){
+		this.movesLeft = numberOfMoves;
+		this.movesIdx = 0;
 
-		function generateMoves(){
-			var arr = [];
-			for(var i=0; i < numberOfMoves; i++)
-			{
-				var newMove = Math.floor(Math.random() * (5 - 1) + 1);
-				arr.push(newMove);
-			}
-
-			return arr;
-		}
-
-		this.moves = generateMoves();
-
-		this.reset = function(){
-			this.movesLeft = this.moves.length;
-			this.movesIdx = 0;
+		this.nextMove = function(){
+			this.movesLeft--;
+			this.movesIdx++;
 		};
 	};
 
@@ -37,14 +39,24 @@ $(document).ready(function(){
 	var currTurn;
 	var padsBlocked = true; 
 
-	$("#start").click(function(){
-		currSession = new GameSession(1);
-		$("#display").html(currSession.level);
-		newTurn();
-	});
-
 	$(".pad").click(function(event){
 		padClicked($(this));		
+	});
+
+	$(".level-btn").click(function(event) {		
+		var clicked = this;
+
+		$(".level-btn").each(function(){
+			if(this !== clicked)
+				this.checked = false;
+		});
+	});
+
+	$("#start").click(function(){
+		currSession = new GameSession();
+		currSession.init(returnSelectedLevel());
+		$("#display").html(currSession.level);
+		newTurn();
 	});
 
 	$("#strict-btn").click(function(){
@@ -52,14 +64,25 @@ $(document).ready(function(){
 		currSession.strict = $(this).hasClass("clicked");
 	});
 
+	function returnSelectedLevel()
+	{
+		var result;
+
+		$(".level-btn").each(function(){
+			if(this.checked)
+				result = parseInt(this.name);
+		});
+
+		return result;
+	}
+
 	function newTurn()
 	{		
 		currTurn = new Turn(currSession.level);
-		currTurn.reset();
 
 		setTimeout(function(){
 			showMoves();
-		}, 1000);
+		}, 500);
 	}
 
 	function nextTurn()
@@ -69,7 +92,7 @@ $(document).ready(function(){
 		applyAnimation($("#controller"), "anim-right", newTurn, 1);
 	}
 
-	function startTurn()
+	function unblockPads()
 	{
 		padsBlocked = false;
 	}
@@ -94,8 +117,8 @@ $(document).ready(function(){
 
 	function showMoves()
 	{
-		for(var i=0; i < currTurn.moves.length; i++)
-			delayBlink(i, currTurn.moves[i]);
+		for(var i=0; i < currSession.moves.length; i++)
+			delayBlink(i, currSession.moves[i]);
 
 		function delayBlink(delayFactor, padNumber)
 		{
@@ -104,53 +127,66 @@ $(document).ready(function(){
 
 					if($(this).attr("data-pad") == padNumber)
 					{
-						var callback = delayFactor >= currTurn.moves.length - 1 ? startTurn : false;
+						var callback = delayFactor >= currSession.moves.length - 1 ? unblockPads : false;
+						updateblinkDur($(this));
 						applyAnimation($(this), "blink", callback, 0);					
 					}
 				});
 
-			}, 1000/currSession.speed * delayFactor);
+			}, 1000/currSession.replaySpeed * delayFactor);
 		}
+	}
+
+	function updateblinkDur(ref)
+	{
+		ref.css("animation-duration", currSession.blinkDur + "s");
+		ref.css("animation-duration", currSession.blinkDur + "s");
+
+		console.log(ref.css("animation-duration"));
 	}
 
 	function padClicked(ref)
 	{
 		if(!padsBlocked)
 		{
-			applyAnimation(ref, "blink");
 			var padNum = ref.attr("data-pad");
 
-			if(padNum == currTurn.moves[currTurn.movesIdx])
-				rightMove();
+			if(padNum == currSession.moves[currTurn.movesIdx])
+				rightMove(ref);
 			else
-				wrongMove();
+				wrongMove(ref);
 		}
 	}
 
-	function rightMove()
+	function rightMove(ref)
 	{
-		currTurn.movesLeft--;
-		currTurn.movesIdx++;
+		//padsBlocked = true;
+		//var callback = false;
+
+		currTurn.nextMove();
 
 		if(currTurn.movesLeft <= 0)
-		{
-			padsBlocked = true;
 			setTimeout(nextTurn, 500);
-		}
+		else
+			callback = unblockPads;
+
+		//applyAnimation(ref, "blink", callback, 1);
+
+		applyAnimation(ref, "blink");
 	}
 
-	function wrongMove()
+	function wrongMove(ref)
 	{
 		padsBlocked = true;
-		currTurn.reset();
 		var callback = false;
 
 		if(currSession.strict)
 			gameOver();
 		else
-			callback = showMoves;
+			callback = newTurn;
 
-		applyAnimation($("#game-cont"), "shake", callback, 1000);
+		//applyAnimation(ref, "blink");
+		applyAnimation($("#game-cont"), "shake", callback, 1);
 	}
 
 	function whichTransitionEvent()
