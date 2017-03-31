@@ -24,6 +24,17 @@ body, html{
 	background-color: azure;
 }
 
+#game-cont.shake{
+	animation: shake .2s ease-in-out 2; 
+}
+
+@keyframes shake{
+	0%{margin-left:-5px;}
+	25%{margin-left:0;}
+	50%{margin-left:5px;}
+	100%{margin-left:0;}
+}
+
 #pads-cont{
 	position: relative;
 	z-index: 1;
@@ -47,6 +58,7 @@ body, html{
 }
 
 .blink{
+	-webkit-animation: blink .5s ease-in-out; 
 	animation: blink .5s ease-in-out; 
 }
 
@@ -82,7 +94,49 @@ body, html{
 	justify-content: center;
 	align-items: center;
 	border-radius: 50%;
-	background-color: azure;
+	background-color: white;
 	left: calc(50% - 125px);
 }
+
+#controller.anim-right{
+	-webkit-animation: rightMove .5s linear; 
+	animation: rightMove .5s linear; 
+}
+
+@keyframes rightMove{
+	0%{background-color: white;}
+	50%{background-color: green;}
+	100%{background-color: white;}
+}
+
+#display{
+	width: 50px;
+	height: 50px;
+	display: flex;
+	flex-flow: column nowrap;
+	justify-content: center;
+	align-items: center;
+	color: red;
+	background-color: black;
+}
+
+#strict-btn{
+	width: 15px;
+	height: 15px;
+	display: flex;
+	flex-flow: column nowrap;
+	justify-content: center;
+	align-items: center;
+	border-radius: 50%;
+	border: solid blue 5px;
+	background-color: white;
+}
+
+#strict-btn.clicked{
+	background-color: blue;
+}
+
+
+
+
 

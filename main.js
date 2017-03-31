@@ -3,7 +3,7 @@ $(document).ready(function(){
 	var GameSession = function(level, diff){
 		this.level = 1;
 		this.speed = 1;
-		this.gameMode = null; // = strict????
+		this.strict = false;
 
 		this.nextLevel = function(){
 			this.level++;
@@ -26,8 +26,10 @@ $(document).ready(function(){
 		}
 
 		this.moves = generateMoves();
-		this.dropMove =  function(){
-			this.moves.shift();
+
+		this.reset = function(){
+			this.movesLeft = this.moves.length;
+			this.movesIdx = 0;
 		};
 	};
 
@@ -37,6 +39,7 @@ $(document).ready(function(){
 
 	$("#start").click(function(){
 		currSession = new GameSession(1);
+		$("#display").html(currSession.level);
 		newTurn();
 	});
 
@@ -44,41 +47,26 @@ $(document).ready(function(){
 		padClicked($(this));		
 	});
 
-	function showMoves(moves)
-	{
-		for(var i=0; i < moves.length; i++)
-			delayBlink(i, moves[i]);
-
-		function delayBlink(delayFactor, padNumber)
-		{
-			setTimeout(function(){
-
-				$(".pad").each(function(){
-					if($(this).attr("data-pad") == padNumber)
-					{
-						var callback = delayFactor >= moves.length - 1 ? startTurn : false;
-						makeBlink($(this), callback);					
-					}
-				});
-
-			}, 1000/currSession.speed * delayFactor);
-		}
-	}
-
-	function nextTurn()
-	{
-		padsBlocked = true;
-		currSession.nextLevel();
-		newTurn();
-	}
+	$("#strict-btn").click(function(){
+		$(this).toggleClass("clicked");
+		currSession.strict = $(this).hasClass("clicked");
+	});
 
 	function newTurn()
 	{		
 		currTurn = new Turn(currSession.level);
+		currTurn.reset();
 
 		setTimeout(function(){
-			showMoves(currTurn.moves);
-		}, 1500);
+			showMoves();
+		}, 1000);
+	}
+
+	function nextTurn()
+	{
+		currSession.nextLevel();
+		$("#display").html(currSession.level);
+		applyAnimation($("#controller"), "anim-right", newTurn, 1);
 	}
 
 	function startTurn()
@@ -86,14 +74,53 @@ $(document).ready(function(){
 		padsBlocked = false;
 	}
 
+	function gameOver()
+	{
+		var delayFactor = 1;
+
+		for(i=currSession.level; i >= 1; i--)
+		{
+			delayFactor++;
+			dropLevel(i, delayFactor);
+		}
+
+		function dropLevel(level, delayFactor)
+		{
+			setTimeout(function(){
+				$("#display").html(level);
+			}, 100 * delayFactor);
+		}
+	}
+
+	function showMoves()
+	{
+		for(var i=0; i < currTurn.moves.length; i++)
+			delayBlink(i, currTurn.moves[i]);
+
+		function delayBlink(delayFactor, padNumber)
+		{
+			setTimeout(function(){
+				$(".pad").each(function(){
+
+					if($(this).attr("data-pad") == padNumber)
+					{
+						var callback = delayFactor >= currTurn.moves.length - 1 ? startTurn : false;
+						applyAnimation($(this), "blink", callback, 0);					
+					}
+				});
+
+			}, 1000/currSession.speed * delayFactor);
+		}
+	}
+
 	function padClicked(ref)
 	{
 		if(!padsBlocked)
 		{
-			makeBlink(ref);
+			applyAnimation(ref, "blink");
 			var padNum = ref.attr("data-pad");
 
-			if(padNum == currTurn.moves[0])
+			if(padNum == currTurn.moves[currTurn.movesIdx])
 				rightMove();
 			else
 				wrongMove();
@@ -102,16 +129,28 @@ $(document).ready(function(){
 
 	function rightMove()
 	{
-		currTurn.dropMove();
+		currTurn.movesLeft--;
+		currTurn.movesIdx++;
 
-		if(currTurn.moves.length <= 0)
-			nextTurn();
+		if(currTurn.movesLeft <= 0)
+		{
+			padsBlocked = true;
+			setTimeout(nextTurn, 500);
+		}
 	}
 
 	function wrongMove()
 	{
 		padsBlocked = true;
-		console.log("wrong pad touched!!! restart game!");
+		currTurn.reset();
+		var callback = false;
+
+		if(currSession.strict)
+			gameOver();
+		else
+			callback = showMoves;
+
+		applyAnimation($("#game-cont"), "shake", callback, 1000);
 	}
 
 	function whichTransitionEvent()
@@ -131,14 +170,16 @@ $(document).ready(function(){
 		}
 	}
 
-	function makeBlink(ref, callback)
+	function applyAnimation(ref, anim, callback, delay)
 	{
 		var transitionEvent = whichTransitionEvent();
-		ref.addClass("blink");
+		ref.addClass(anim);
 		ref.one(transitionEvent, function(event) {
-		    ref.removeClass("blink");
+
+	    	ref.removeClass(anim);
+
 		    if(callback)
-			    callback.call();
+		    	setTimeout(function(){callback.apply();}, delay);
 		});
 	}
 
