@@ -43,21 +43,23 @@ $(document).ready(function(){
 	var moveTimeouts = []; 
 
 	$(".pad").click(function(event){
-		padClicked($(this));		
+		if(!padsBlocked)
+		{
+			var pad = $(this);
+			if(pad.attr("data-pad") == currSession.moves[currTurn.movesIdx])
+				rightMove(pad);
+			else
+				wrongMove(pad);
+		}		
 	});
 
 	$(".level-btn").click(function(event) {
-		stopMovePlay();
-		padsBlocked = true;		
-		selectCurrentLevel(parseInt(this.name));
-		$("#start").addClass("pulse");
+		resetGame(parseInt(this.name));
 	});
 
 	$("#start").click(function(){
 		$(this).removeClass("pulse");
-		stopMovePlay();
-		gameSetup();
-		newTurn();
+		resetGame(1);
 	});
 
 	$("#strict-btn").click(function(){
@@ -82,11 +84,20 @@ $(document).ready(function(){
 		if(level % 4 === 0 || level === 1)
 		{
 			$(".level-btn").each(function(){
-					this.checked = parseInt(this.name) <= level;
+				this.checked = parseInt(this.name) <= level;
 			});
 
 			$("#display").html(level);
 		}
+	}
+
+	function resetGame(toLevel)
+	{
+		stopShowMoves();
+		padsBlocked = true;		
+		selectCurrentLevel(toLevel);
+		gameSetup();
+		applyAnimation($("#ripple"), "expand", newTurn, 0);
 	}
 
 	function gameSetup()
@@ -99,10 +110,8 @@ $(document).ready(function(){
 	function newTurn()
 	{		
 		currTurn = new Turn(currSession.level);
-
-		setTimeout(function(){
-			showMoves();
-		}, 500);
+		updateBlinkDur(currSession.blinkDur);
+		showMoves();
 	}
 
 	function nextTurn()
@@ -110,11 +119,12 @@ $(document).ready(function(){
 		currSession.nextLevel();
 		$("#display").html(currSession.level);
 		selectCurrentLevel(currSession.level);
-		applyAnimation($("#controller"), "anim-right", newTurn, 1);
+		applyAnimation($("#ripple"), "contract", newTurn, 0);
 	}
 
 	function unblockPads()
 	{
+		updateBlinkDur(0.1);
 		padsBlocked = false;
 	}
 
@@ -141,6 +151,14 @@ $(document).ready(function(){
 		}
 	}
 
+	function stopShowMoves()
+	{
+		for(var i=0; i < moveTimeouts.length; i++)
+			clearTimeout(moveTimeouts[i]);
+
+		moveTimeouts = [];
+	}
+
 	function showMoves()
 	{
 		for(var i=0; i < currSession.moves.length; i++)
@@ -154,7 +172,6 @@ $(document).ready(function(){
 					if($(this).attr("data-pad") == padNumber)
 					{
 						var callback = delayFactor >= currSession.moves.length - 1 ? unblockPads : false;
-						updateblinkDur($(this));
 						applyAnimation($(this), "blink", callback, 0);					
 					}
 				});
@@ -165,41 +182,26 @@ $(document).ready(function(){
 		}
 	}
 
-	function updateblinkDur(ref)
+	function updateBlinkDur(dur)
 	{
-		ref.css("animation-duration", currSession.blinkDur + "s");
-		ref.css("animation-duration", currSession.blinkDur + "s");
-		console.log(ref.css("animation-duration"));
-	}
-
-	function padClicked(ref)
-	{
-		if(!padsBlocked)
-		{
-			var padNum = ref.attr("data-pad");
-
-			if(padNum == currSession.moves[currTurn.movesIdx])
-				rightMove(ref);
-			else
-				wrongMove(ref);
-		}
+		$(".pad").css("-webkit-animation-duration", dur + "s");
+		$(".pad").css("animation-duration", dur + "s");
 	}
 
 	function rightMove(ref)
 	{
+		//uncomment and regulate player input blink anim to prevent multiple clicks 
+		
 		//padsBlocked = true;
-		//var callback = false;
-
 		currTurn.nextMove();
 
 		if(currTurn.movesLeft <= 0)
-			setTimeout(nextTurn, 500);
+			applyAnimation(ref, "blink", nextTurn, 0);
 		else
-			callback = unblockPads;
+			applyAnimation(ref, "blink");
 
-		//applyAnimation(ref, "blink", callback, 1);
-
-		applyAnimation(ref, "blink");
+		// else
+			//applyAnimation(ref, "blink", unblockPads, 0);
 	}
 
 	function wrongMove(ref)
@@ -244,14 +246,6 @@ $(document).ready(function(){
 		    if(callback)
 		    	setTimeout(function(){callback.apply();}, delay);
 		});
-	}
-
-	function stopMovePlay()
-	{
-		for(var i=0; i < moveTimeouts.length; i++)
-			clearTimeout(moveTimeouts[i]);
-
-		moveTimeouts = [];
 	}
 
 	gameSetup();

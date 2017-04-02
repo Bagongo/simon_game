@@ -58,7 +58,7 @@ body, html{
 }
 
 .blink{
-	-webkit-animation: blink .75s ease-in-out; 
+	-webkit-animation: blink 0.5s ease-in-out; 
 	animation: blink 0.5s ease-in-out; 
 }
 
@@ -69,19 +69,19 @@ body, html{
 }
 
 #blue{
-	background-color: blue;
+	background-color: #7689D1;
 }
 
 #red{
-	background-color: red;
+	background-color: #FF626D;
 }
 
 #yellow{
-	background-color: #BBBB09;
+	background-color: #D0E662;
 }
 
 #green{
-	background-color: green;
+	background-color: #9CEC5D;
 }
 
 #controller{
@@ -97,17 +97,6 @@ body, html{
 	background-color: white;
 	left: calc(50% - 125px);
 	top: calc(50% - 125px);
-}
-
-#controller.anim-right{
-	-webkit-animation: rightMove .5s linear; 
-	animation: rightMove .5s linear; 
-}
-
-@keyframes rightMove{
-	0%{background-color: white;}
-	50%{background-color: green;}
-	100%{background-color: white;}
 }
 
 #display{
@@ -135,30 +124,22 @@ body, html{
 	position: relative;
 	width: 75%;
 	height: 50%;
+	display: flex;
+	flex-flow: column nowrap;
+	justify-content: center;
+	align-items: center;
+	background-color: azure;
 	font-size: 0.75em;
 }
 
 #start.pulse{
-	animation: pulse .75s linear infinite alternate;
-
+	animation: pulse .75s ease-in-out alternate infinite;
 }
 
 @keyframes pulse{
-	0%{
-		width: 75%; 
-		height: 50%;
-		font-size: 0.75em;
-	}
-	50%{
-		width: 80%;
-		height: 64%;
-		font-size: .75em;
-	}
-	100%{
-		width: 75%;
-		height: 50%;
-		font-size: 0.75em;
-	}
+	0%{transform: scale(1);}
+	25%{transform: scale(1);}
+	100%{transform: scale(1.1)}
 }
 
 #strict-btn{
@@ -175,6 +156,37 @@ body, html{
 
 #strict-btn.clicked{
 	background-color: blue;
+}
+
+#ripple{
+	position: absolute;
+	z-index: -1;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	left: calc(50% - 12px);
+	top: calc(50% - 12px);
+	border: 2px solid green;
+}
+
+#ripple.expand{
+	animation: expand 0.25s ease-in-out;
+}
+
+#ripple.contract{
+	animation: contract 0.25s ease-in-out 2 alternate;
+}
+
+@keyframes expand{
+	0%{transform: scale(1); opacity: 0;}
+	50%{opacity: 1}
+	100%{transform: scale(9); opacity: 0;}
+}
+
+@keyframes contract{
+	0%{transform: scale(9); opacity: 0;}
+	50%{opacity: 1}
+	100%{transform: scale(1); opacity: 0;}
 }
 
 
