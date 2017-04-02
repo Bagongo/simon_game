@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Tic tac toe</title>
+	<title>Simon's Game</title>
 	<meta charset="utf-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,15 +25,22 @@
 			</div>
 
 			<div id="controller">
+
 				<div id="levels">
 					<input class="level-btn" type="radio" name="1" checked="true">
 					<input class="level-btn" type="radio" name="4">
 					<input class="level-btn" type="radio" name="8">
 					<input class="level-btn" type="radio" name="12">
 				</div>
+
 				<div id="display">--</div>
-				<button id="start">start</button>
-				<div id="strict-btn" data-on="false"></div>
+
+				<div id="start-cont">
+					<button id="start" class="pulse">start</button>
+				</div>
+
+				<div id="strict-btn"></div>
+
 			</div>		
 
 		</div>		

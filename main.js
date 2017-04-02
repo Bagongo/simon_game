@@ -3,7 +3,7 @@ $(document).ready(function(){
 	var GameSession = function(){
 		this.moves = [];
 		this.level = 0;
-		this.strict = false;	
+		this.strict = null;	
 		this.replaySpeed = 1;
 		this.blinkDur = 0.5;
 
@@ -19,9 +19,11 @@ $(document).ready(function(){
 			this.addMove();
 		};
 
-		this.init = function(level){
+		this.init = function(level, strict){
 			for(var i=0; i < level; i++)
 				this.nextLevel();
+
+			this.strict = strict;
 		};
 	};
 
@@ -37,25 +39,24 @@ $(document).ready(function(){
 
 	var currSession;
 	var currTurn;
-	var padsBlocked = true; 
+	var padsBlocked = true;
+	var moveTimeouts = []; 
 
 	$(".pad").click(function(event){
 		padClicked($(this));		
 	});
 
-	$(".level-btn").click(function(event) {		
-		var clicked = this;
-
-		$(".level-btn").each(function(){
-			if(this !== clicked)
-				this.checked = false;
-		});
+	$(".level-btn").click(function(event) {
+		stopMovePlay();
+		padsBlocked = true;		
+		selectCurrentLevel(parseInt(this.name));
+		$("#start").addClass("pulse");
 	});
 
 	$("#start").click(function(){
-		currSession = new GameSession();
-		currSession.init(returnSelectedLevel());
-		$("#display").html(currSession.level);
+		$(this).removeClass("pulse");
+		stopMovePlay();
+		gameSetup();
 		newTurn();
 	});
 
@@ -76,6 +77,25 @@ $(document).ready(function(){
 		return result;
 	}
 
+	function selectCurrentLevel(level)
+	{
+		if(level % 4 === 0 || level === 1)
+		{
+			$(".level-btn").each(function(){
+					this.checked = parseInt(this.name) <= level;
+			});
+
+			$("#display").html(level);
+		}
+	}
+
+	function gameSetup()
+	{
+		currSession = new GameSession();
+		currSession.init(returnSelectedLevel(), $("#strict-btn").hasClass("clicked"));
+		$("#display").html(currSession.level);
+	}
+
 	function newTurn()
 	{		
 		currTurn = new Turn(currSession.level);
@@ -89,6 +109,7 @@ $(document).ready(function(){
 	{
 		currSession.nextLevel();
 		$("#display").html(currSession.level);
+		selectCurrentLevel(currSession.level);
 		applyAnimation($("#controller"), "anim-right", newTurn, 1);
 	}
 
@@ -97,11 +118,11 @@ $(document).ready(function(){
 		padsBlocked = false;
 	}
 
-	function gameOver()
+	function gameOver(levelToDropTo)
 	{
 		var delayFactor = 1;
 
-		for(i=currSession.level; i >= 1; i--)
+		for(i=currSession.level; i >= levelToDropTo; i--)
 		{
 			delayFactor++;
 			dropLevel(i, delayFactor);
@@ -111,6 +132,11 @@ $(document).ready(function(){
 		{
 			setTimeout(function(){
 				$("#display").html(level);
+				selectCurrentLevel(level);
+
+				if(level <= levelToDropTo)
+					$("#start").addClass("pulse");
+
 			}, 100 * delayFactor);
 		}
 	}
@@ -122,7 +148,7 @@ $(document).ready(function(){
 
 		function delayBlink(delayFactor, padNumber)
 		{
-			setTimeout(function(){
+			var move = setTimeout(function(){
 				$(".pad").each(function(){
 
 					if($(this).attr("data-pad") == padNumber)
@@ -134,6 +160,8 @@ $(document).ready(function(){
 				});
 
 			}, 1000/currSession.replaySpeed * delayFactor);
+
+			moveTimeouts.push(move);
 		}
 	}
 
@@ -141,7 +169,6 @@ $(document).ready(function(){
 	{
 		ref.css("animation-duration", currSession.blinkDur + "s");
 		ref.css("animation-duration", currSession.blinkDur + "s");
-
 		console.log(ref.css("animation-duration"));
 	}
 
@@ -181,7 +208,7 @@ $(document).ready(function(){
 		var callback = false;
 
 		if(currSession.strict)
-			gameOver();
+			gameOver(1);
 		else
 			callback = newTurn;
 
@@ -189,9 +216,9 @@ $(document).ready(function(){
 		applyAnimation($("#game-cont"), "shake", callback, 1);
 	}
 
-	function whichTransitionEvent()
+	function whichAnimationEvent()
 	{
-		var t, el = document.createElement("fakeelement");
+		var a, el = document.createElement("fakeelement");
   		var animations = {
 			"animation"      : "animationend",
 			"OAnimation"     : "oAnimationEnd",
@@ -199,16 +226,16 @@ $(document).ready(function(){
 			"WebkitAnimation": "webkitAnimationEnd"
 		};
 
-		for (t in animations)
+		for (a in animations)
 		{
-			if (el.style[t] !== undefined)
-				return animations[t];
+			if (el.style[a] !== undefined)
+				return animations[a];
 		}
 	}
 
 	function applyAnimation(ref, anim, callback, delay)
 	{
-		var transitionEvent = whichTransitionEvent();
+		var transitionEvent = whichAnimationEvent();
 		ref.addClass(anim);
 		ref.one(transitionEvent, function(event) {
 
@@ -218,5 +245,15 @@ $(document).ready(function(){
 		    	setTimeout(function(){callback.apply();}, delay);
 		});
 	}
+
+	function stopMovePlay()
+	{
+		for(var i=0; i < moveTimeouts.length; i++)
+			clearTimeout(moveTimeouts[i]);
+
+		moveTimeouts = [];
+	}
+
+	gameSetup();
 
 });

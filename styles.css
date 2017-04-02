@@ -96,6 +96,7 @@ body, html{
 	border-radius: 50%;
 	background-color: white;
 	left: calc(50% - 125px);
+	top: calc(50% - 125px);
 }
 
 #controller.anim-right{
@@ -118,6 +119,46 @@ body, html{
 	align-items: center;
 	color: red;
 	background-color: black;
+}
+
+#start-cont{
+	width: 100px;
+	height: 50px;
+	display: flex;
+	flex-flow: column nowrap;
+	justify-content: center;
+	align-items: center;
+	background-color: red;
+}
+
+#start{
+	position: relative;
+	width: 75%;
+	height: 50%;
+	font-size: 0.75em;
+}
+
+#start.pulse{
+	animation: pulse .75s linear infinite alternate;
+
+}
+
+@keyframes pulse{
+	0%{
+		width: 75%; 
+		height: 50%;
+		font-size: 0.75em;
+	}
+	50%{
+		width: 80%;
+		height: 64%;
+		font-size: .75em;
+	}
+	100%{
+		width: 75%;
+		height: 50%;
+		font-size: 0.75em;
+	}
 }
 
 #strict-btn{
