@@ -48,13 +48,15 @@ body, html{
 	border-radius: 50%;
 	overflow: hidden;
 	background-color: white;
+
+	-webkit-transition: all 2.5s linear;
+	transition: all 0.5s linear;
 }
 
 .pad{
 	position: relative;
 	width: 49%;
 	height: 49%;
-	background-color: blue;
 }
 
 .blink{
@@ -69,19 +71,19 @@ body, html{
 }
 
 #blue{
-	background-color: #7689D1;
+	background-color: #7CBDFF;
 }
 
 #red{
-	background-color: #FF626D;
+	background-color: #FF9A90;
 }
 
 #yellow{
-	background-color: #D0E662;
+	background-color: #FEF58C;
 }
 
 #green{
-	background-color: #9CEC5D;
+	background-color: #D9EB7F;
 }
 
 #controller{
@@ -97,6 +99,24 @@ body, html{
 	background-color: white;
 	left: calc(50% - 125px);
 	top: calc(50% - 125px);
+}
+
+#levels-cont{
+	display: flex;
+	flex-flow: row nowrap;
+	justify-content: space-between;
+	align-items: center;
+}
+
+
+.level-btn{
+	width: 20px;
+	height: 10px;
+	border: 1px solid blue;
+}
+
+.level-btn.clicked{
+	background-color: blue;
 }
 
 #display{
@@ -166,15 +186,11 @@ body, html{
 	border-radius: 50%;
 	left: calc(50% - 12px);
 	top: calc(50% - 12px);
-	border: 2px solid green;
+	border: 2px solid lightblue;
 }
 
 #ripple.expand{
 	animation: expand 0.25s ease-in-out;
-}
-
-#ripple.contract{
-	animation: contract 0.25s ease-in-out 2 alternate;
 }
 
 @keyframes expand{
@@ -182,14 +198,6 @@ body, html{
 	50%{opacity: 1}
 	100%{transform: scale(9); opacity: 0;}
 }
-
-@keyframes contract{
-	0%{transform: scale(9); opacity: 0;}
-	50%{opacity: 1}
-	100%{transform: scale(1); opacity: 0;}
-}
-
-
 
 
 

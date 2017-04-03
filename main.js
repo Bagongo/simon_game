@@ -6,6 +6,8 @@ $(document).ready(function(){
 		this.strict = null;	
 		this.replaySpeed = 1;
 		this.blinkDur = 0.5;
+		this.rotate = false;
+		this.currRotation = 0;
 
 		this.addMove = function(){
 			var newMove = Math.floor(Math.random() * (5 - 1) + 1);
@@ -17,6 +19,7 @@ $(document).ready(function(){
 			this.replaySpeed = Math.min(5, this.replaySpeed + 0.25);
 			this.blinkDur = Math.max(0.1, this.blinkDur - 0.025);
 			this.addMove();
+			this.rotate = this.level >= 12;
 		};
 
 		this.init = function(level, strict){
@@ -49,17 +52,31 @@ $(document).ready(function(){
 			if(pad.attr("data-pad") == currSession.moves[currTurn.movesIdx])
 				rightMove(pad);
 			else
-				wrongMove(pad);
+				wrongMove();
 		}		
 	});
 
 	$(".level-btn").click(function(event) {
-		resetGame(parseInt(this.name));
+		altGame();
+		gameSetup(parseInt($(this).attr("data-name")));
+		$("#start").html("start");
+		$("#start").addClass("pulse");
 	});
 
 	$("#start").click(function(){
-		$(this).removeClass("pulse");
-		resetGame(1);
+		if($(this).html() === "start")
+		{
+			$(this).removeClass("pulse");
+			$(this).html("reset");
+			startGame();
+		}
+		else if($(this).html() === "reset")
+		{
+			altGame();
+			dropLevels(1);
+		}
+		else
+			return;
 	});
 
 	$("#strict-btn").click(function(){
@@ -72,8 +89,8 @@ $(document).ready(function(){
 		var result;
 
 		$(".level-btn").each(function(){
-			if(this.checked)
-				result = parseInt(this.name);
+			if($(this).hasClass("clicked"))
+				result = parseInt($(this).attr("data-name"));
 		});
 
 		return result;
@@ -84,27 +101,66 @@ $(document).ready(function(){
 		if(level % 4 === 0 || level === 1)
 		{
 			$(".level-btn").each(function(){
-				this.checked = parseInt(this.name) <= level;
+				if(parseInt($(this).attr("data-name")) <= level)
+					$(this).addClass("clicked");
+				else
+					$(this).removeClass("clicked");	
 			});
 
 			$("#display").html(level);
 		}
 	}
 
-	function resetGame(toLevel)
+	function altGame()
 	{
 		stopShowMoves();
-		padsBlocked = true;		
-		selectCurrentLevel(toLevel);
-		gameSetup();
-		applyAnimation($("#ripple"), "expand", newTurn, 0);
+		padsBlocked = true;	
 	}
 
-	function gameSetup()
+	function resetGame(toLevel)
 	{
+		gameSetup(toLevel);
+		$("#start").html("start");
+		$("#start").addClass("pulse");
+	}
+
+	function gameSetup(level)
+	{
+		selectCurrentLevel(level);
 		currSession = new GameSession();
 		currSession.init(returnSelectedLevel(), $("#strict-btn").hasClass("clicked"));
 		$("#display").html(currSession.level);
+	}
+
+	function startGame()
+	{
+		applyAnimation($("#ripple"), "expand", newTurn, 250);
+	}
+
+	function dropLevels(levelToDropTo)
+	{
+		var delayFactor = 1;
+		$("#start").html("--");
+		applyRotation(0);
+
+		for(i=currSession.level; i >= levelToDropTo; i--)
+		{
+			delayFactor++;
+			drop(i, delayFactor);
+		}
+
+		function drop(level, delay)
+		{
+			setTimeout(function(){
+
+				$("#display").html(level);
+				selectCurrentLevel(level);
+
+				if(level <= levelToDropTo)
+					resetGame(level);
+
+			}, 100 * delay);
+		}
 	}
 
 	function newTurn()
@@ -119,36 +175,13 @@ $(document).ready(function(){
 		currSession.nextLevel();
 		$("#display").html(currSession.level);
 		selectCurrentLevel(currSession.level);
-		applyAnimation($("#ripple"), "contract", newTurn, 0);
+		applyAnimation($("#ripple"), "expand", newTurn, 250);
 	}
 
 	function unblockPads()
 	{
 		updateBlinkDur(0.1);
 		padsBlocked = false;
-	}
-
-	function gameOver(levelToDropTo)
-	{
-		var delayFactor = 1;
-
-		for(i=currSession.level; i >= levelToDropTo; i--)
-		{
-			delayFactor++;
-			dropLevel(i, delayFactor);
-		}
-
-		function dropLevel(level, delayFactor)
-		{
-			setTimeout(function(){
-				$("#display").html(level);
-				selectCurrentLevel(level);
-
-				if(level <= levelToDropTo)
-					$("#start").addClass("pulse");
-
-			}, 100 * delayFactor);
-		}
 	}
 
 	function stopShowMoves()
@@ -171,7 +204,11 @@ $(document).ready(function(){
 
 					if($(this).attr("data-pad") == padNumber)
 					{
-						var callback = delayFactor >= currSession.moves.length - 1 ? unblockPads : false;
+						var callback = false;
+
+						if(delayFactor >= currSession.moves.length - 1)
+							callback = currSession.rotate === true ? applyRotation : unblockPads;
+
 						applyAnimation($(this), "blink", callback, 0);					
 					}
 				});
@@ -204,17 +241,16 @@ $(document).ready(function(){
 			//applyAnimation(ref, "blink", unblockPads, 0);
 	}
 
-	function wrongMove(ref)
+	function wrongMove()
 	{
 		padsBlocked = true;
 		var callback = false;
 
 		if(currSession.strict)
-			gameOver(1);
+			dropLevels(1);
 		else
 			callback = newTurn;
 
-		//applyAnimation(ref, "blink");
 		applyAnimation($("#game-cont"), "shake", callback, 1);
 	}
 
@@ -248,6 +284,22 @@ $(document).ready(function(){
 		});
 	}
 
-	gameSetup();
+	function applyRotation(deg)
+	{
+		var degrees = deg !== undefined ? deg : currSession.currRotation + 90;
+
+		console.log(degrees); 
+
+		$("#pads-cont").css({'-webkit-transform' : 'rotate('+ degrees +'deg)',
+                 '-moz-transform' : 'rotate('+ degrees +'deg)',
+                 '-ms-transform' : 'rotate('+ degrees +'deg)',
+                 'transform' : 'rotate('+ degrees +'deg)'
+        });
+
+        currSession.currRotation = degrees;
+        unblockPads();
+	}
+
+	gameSetup(1);
 
 });
