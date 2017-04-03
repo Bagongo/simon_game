@@ -53,14 +53,33 @@ body, html{
 	transition: all 0.5s linear;
 }
 
+#pads-cont.spin{
+	-webkit-animation: spin 2s infinite linear;
+	animation: spin 2s infinite ease-in linear;
+}
+
+@keyframes spin{
+	0%{
+		-ms-transform: rotate(0);
+		-moz-transform: rotate(0);
+	    -webkit-transform: rotate(0);
+	    transform: rotate(0);
+	}
+	100%{
+	    -moz-transform: rotate(360deg);
+		-ms-transform: rotate(360deg);
+	    -webkit-transform: rotate(360deg);
+	    transform: rotate(360deg);
+	}
+}
+
 .pad{
 	position: relative;
-	width: 49%;
-	height: 49%;
+	width: 48%;
+	height: 48%;
 }
 
 .blink{
-	-webkit-animation: blink 0.5s ease-in-out; 
 	animation: blink 0.5s ease-in-out; 
 }
 
@@ -128,6 +147,15 @@ body, html{
 	align-items: center;
 	color: red;
 	background-color: black;
+}
+
+#display.flicker{
+	animation: flicker .5s infinite;
+}
+
+@keyframes flicker{
+	0%{color: red;}
+	100%{color: transparent;}
 }
 
 #start-cont{

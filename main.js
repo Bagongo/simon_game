@@ -43,7 +43,7 @@ $(document).ready(function(){
 	var currSession;
 	var currTurn;
 	var padsBlocked = true;
-	var moveTimeouts = []; 
+	var timeouts = []; 
 
 	$(".pad").click(function(event){
 		if(!padsBlocked)
@@ -66,13 +66,13 @@ $(document).ready(function(){
 	$("#start").click(function(){
 		if($(this).html() === "start")
 		{
-			$(this).removeClass("pulse");
 			$(this).html("reset");
+			$(this).removeClass("pulse");
 			startGame();
 		}
 		else if($(this).html() === "reset")
 		{
-			altGame();
+			restoreFromWin();
 			dropLevels(1);
 		}
 		else
@@ -96,7 +96,7 @@ $(document).ready(function(){
 		return result;
 	}
 
-	function selectCurrentLevel(level)
+	function selectLevel(level)
 	{
 		if(level % 4 === 0 || level === 1)
 		{
@@ -113,7 +113,8 @@ $(document).ready(function(){
 
 	function altGame()
 	{
-		stopShowMoves();
+		$("#ripple").removeClass("expand");
+		stopTimeOuts();
 		padsBlocked = true;	
 	}
 
@@ -126,7 +127,7 @@ $(document).ready(function(){
 
 	function gameSetup(level)
 	{
-		selectCurrentLevel(level);
+		selectLevel(level);
 		currSession = new GameSession();
 		currSession.init(returnSelectedLevel(), $("#strict-btn").hasClass("clicked"));
 		$("#display").html(currSession.level);
@@ -139,9 +140,10 @@ $(document).ready(function(){
 
 	function dropLevels(levelToDropTo)
 	{
+		altGame();
+		applyRotation(0);
 		var delayFactor = 1;
 		$("#start").html("--");
-		applyRotation(0);
 
 		for(i=currSession.level; i >= levelToDropTo; i--)
 		{
@@ -154,13 +156,25 @@ $(document).ready(function(){
 			setTimeout(function(){
 
 				$("#display").html(level);
-				selectCurrentLevel(level);
+				selectLevel(level);
 
 				if(level <= levelToDropTo)
 					resetGame(level);
 
-			}, 100 * delay);
+			}, 75 * delay);
 		}
+	}
+
+	function winGame()
+	{
+		$("#pads-cont").addClass("spin");
+		$("#display").html("WIN!").addClass("flicker");
+	}
+
+	function restoreFromWin()
+	{
+		$("#display").html("--").removeClass("flicker");
+		$("#pads-cont").removeClass("spin");
 	}
 
 	function newTurn()
@@ -173,9 +187,14 @@ $(document).ready(function(){
 	function nextTurn()
 	{
 		currSession.nextLevel();
-		$("#display").html(currSession.level);
-		selectCurrentLevel(currSession.level);
-		applyAnimation($("#ripple"), "expand", newTurn, 250);
+		if(currSession.level >= 2)
+			winGame();
+		else
+		{
+			$("#display").html(currSession.level);
+			selectLevel(currSession.level);
+			applyAnimation($("#ripple"), "expand", newTurn, 250);
+		}
 	}
 
 	function unblockPads()
@@ -184,12 +203,12 @@ $(document).ready(function(){
 		padsBlocked = false;
 	}
 
-	function stopShowMoves()
+	function stopTimeOuts()
 	{
-		for(var i=0; i < moveTimeouts.length; i++)
-			clearTimeout(moveTimeouts[i]);
+		for(var i=0; i < timeouts.length; i++)
+			clearTimeout(timeouts[i]);
 
-		moveTimeouts = [];
+		timeouts = [];
 	}
 
 	function showMoves()
@@ -215,7 +234,7 @@ $(document).ready(function(){
 
 			}, 1000/currSession.replaySpeed * delayFactor);
 
-			moveTimeouts.push(move);
+			timeouts.push(move);
 		}
 	}
 
@@ -280,7 +299,11 @@ $(document).ready(function(){
 	    	ref.removeClass(anim);
 
 		    if(callback)
-		    	setTimeout(function(){callback.apply();}, delay);
+		    {
+				var delayedCB = setTimeout(function(){callback.apply();}, delay);
+				timeouts.push(delayedCB);
+			}
+
 		});
 	}
 
@@ -288,16 +311,17 @@ $(document).ready(function(){
 	{
 		var degrees = deg !== undefined ? deg : currSession.currRotation + 90;
 
-		console.log(degrees); 
-
-		$("#pads-cont").css({'-webkit-transform' : 'rotate('+ degrees +'deg)',
-                 '-moz-transform' : 'rotate('+ degrees +'deg)',
-                 '-ms-transform' : 'rotate('+ degrees +'deg)',
-                 'transform' : 'rotate('+ degrees +'deg)'
+		$("#pads-cont").css({
+				'-webkit-transform' : 'rotate('+ degrees +'deg)',
+				'-moz-transform' : 'rotate('+ degrees +'deg)',
+				'-ms-transform' : 'rotate('+ degrees +'deg)',
+				'transform' : 'rotate('+ degrees +'deg)'
         });
 
         currSession.currRotation = degrees;
-        unblockPads();
+
+        if(degrees > 0)
+	        unblockPads();
 	}
 
 	gameSetup(1);
