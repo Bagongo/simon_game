@@ -16,10 +16,10 @@ $(document).ready(function(){
 
 		this.nextLevel = function(){
 			this.level++;
-			this.replaySpeed = Math.min(5, this.replaySpeed + 0.25);
-			this.blinkDur = Math.max(0.1, this.blinkDur - 0.025);
+			this.replaySpeed = Math.min(5, this.replaySpeed + 0.15);
+			this.blinkDur = Math.max(0.2, this.blinkDur - 0.015);
 			this.addMove();
-			this.rotate = this.level >= 12;
+			this.rotate = this.level >= 15;
 		};
 
 		this.init = function(level, strict){
@@ -43,24 +43,31 @@ $(document).ready(function(){
 	var currSession;
 	var currTurn;
 	var padsBlocked = true;
-	var timeouts = []; 
+	var timeouts = [];
+	var sounds = [new Audio("https://s3.amazonaws.com/freecodecamp/simonSound1.mp3"), 
+				new Audio("https://s3.amazonaws.com/freecodecamp/simonSound2.mp3"),
+				new Audio("https://s3.amazonaws.com/freecodecamp/simonSound3.mp3"),
+				new Audio("https://s3.amazonaws.com/freecodecamp/simonSound4.mp3")]; 
 
 	$(".pad").click(function(event){
 		if(!padsBlocked)
 		{
 			var pad = $(this);
-			if(pad.attr("data-pad") == currSession.moves[currTurn.movesIdx])
-				rightMove(pad);
+			var padNum = parseInt(pad.attr("data-pad"));
+
+			if(padNum === currSession.moves[currTurn.movesIdx])
+				rightMove(pad, padNum);
 			else
 				wrongMove();
 		}		
 	});
 
-	$(".level-btn").click(function(event) {
-		altGame();
-		gameSetup(parseInt($(this).attr("data-name")));
+	$(".level-btn").click(function(event){
 		$("#start").html("start");
 		$("#start").addClass("pulse");
+		altGame();
+		applyRotation(0);
+		gameSetup(parseInt($(this).attr("data-num")));
 	});
 
 	$("#start").click(function(){
@@ -90,7 +97,7 @@ $(document).ready(function(){
 
 		$(".level-btn").each(function(){
 			if($(this).hasClass("clicked"))
-				result = parseInt($(this).attr("data-name"));
+				result = parseInt($(this).attr("data-num"));
 		});
 
 		return result;
@@ -98,10 +105,10 @@ $(document).ready(function(){
 
 	function selectLevel(level)
 	{
-		if(level % 4 === 0 || level === 1)
+		if(level % 5 === 0 || level === 1)
 		{
 			$(".level-btn").each(function(){
-				if(parseInt($(this).attr("data-name")) <= level)
+				if(parseInt($(this).attr("data-num")) <= level)
 					$(this).addClass("clicked");
 				else
 					$(this).removeClass("clicked");	
@@ -135,7 +142,7 @@ $(document).ready(function(){
 
 	function startGame()
 	{
-		applyAnimation($("#ripple"), "expand", newTurn, 250);
+		applyAnimation($("#ripple"), "expand", newTurn, 350);
 	}
 
 	function dropLevels(levelToDropTo)
@@ -173,8 +180,8 @@ $(document).ready(function(){
 
 	function restoreFromWin()
 	{
-		$("#display").html("--").removeClass("flicker");
 		$("#pads-cont").removeClass("spin");
+		applyRotation(0);
 	}
 
 	function newTurn()
@@ -187,13 +194,13 @@ $(document).ready(function(){
 	function nextTurn()
 	{
 		currSession.nextLevel();
-		if(currSession.level >= 2)
+		if(currSession.level > 20)
 			winGame();
 		else
 		{
 			$("#display").html(currSession.level);
 			selectLevel(currSession.level);
-			applyAnimation($("#ripple"), "expand", newTurn, 250);
+			applyAnimation($("#ripple"), "expand", newTurn, 350);
 		}
 	}
 
@@ -214,28 +221,42 @@ $(document).ready(function(){
 	function showMoves()
 	{
 		for(var i=0; i < currSession.moves.length; i++)
-			delayBlink(i, currSession.moves[i]);
-
-		function delayBlink(delayFactor, padNumber)
 		{
-			var move = setTimeout(function(){
-				$(".pad").each(function(){
+			$(".pad").each(function(){
+				var padNumber = parseInt($(this).attr("data-pad"));
 
-					if($(this).attr("data-pad") == padNumber)
-					{
-						var callback = false;
+				if(padNumber == currSession.moves[i])
+				{
+					var callback = false;
 
-						if(delayFactor >= currSession.moves.length - 1)
-							callback = currSession.rotate === true ? applyRotation : unblockPads;
+					if(i >= currSession.moves.length - 1)
+						callback = currSession.rotate === true ? applyRotation : unblockPads;
 
-						applyAnimation($(this), "blink", callback, 0);					
-					}
-				});
-
-			}, 1000/currSession.replaySpeed * delayFactor);
-
-			timeouts.push(move);
+					delayBlink($(this), padNumber, callback, i);					
+				}
+			});
 		}
+	}
+
+	function delayBlink(pad, padNum, callback, delayFactor)
+	{
+		var move = setTimeout(function(){
+			playSound(padNum - 1);
+			applyAnimation(pad, "blink", callback, 0);
+		}, 1000/currSession.replaySpeed * delayFactor);
+
+		timeouts.push(move);
+	}
+
+	function playSound(index)
+	{
+		for(var i=0; i < sounds.length; i++)
+		{
+			sounds[i].pause();
+			sounds[i].currentTime = 0;
+		}
+
+		sounds[index].play();
 	}
 
 	function updateBlinkDur(dur)
@@ -244,7 +265,7 @@ $(document).ready(function(){
 		$(".pad").css("animation-duration", dur + "s");
 	}
 
-	function rightMove(ref)
+	function rightMove(ref, num)
 	{
 		//uncomment and regulate player input blink anim to prevent multiple clicks 
 		
@@ -252,10 +273,14 @@ $(document).ready(function(){
 		currTurn.nextMove();
 
 		if(currTurn.movesLeft <= 0)
+		{
+			padsBlocked = true;
 			applyAnimation(ref, "blink", nextTurn, 0);
+		}
 		else
 			applyAnimation(ref, "blink");
 
+		playSound(num - 1);
 		// else
 			//applyAnimation(ref, "blink", unblockPads, 0);
 	}
@@ -270,7 +295,7 @@ $(document).ready(function(){
 		else
 			callback = newTurn;
 
-		applyAnimation($("#game-cont"), "shake", callback, 1);
+		applyAnimation($("#game-cont"), "shake", callback, 350);
 	}
 
 	function whichAnimationEvent()

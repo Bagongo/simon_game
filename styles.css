@@ -3,6 +3,8 @@ body, html{
 	height: 100%;
 	margin: 0;
 	padding: 0;
+	font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+	font-size: 0.9em;
 }
 
 #flex-container{
@@ -21,7 +23,6 @@ body, html{
 	flex-flow: column nowrap;
 	justify-content: center;
 	align-items: center;
-	background-color: azure;
 }
 
 #game-cont.shake{
@@ -47,10 +48,11 @@ body, html{
 	align-items: center;
 	border-radius: 50%;
 	overflow: hidden;
-	background-color: white;
-
+	border: 8px solid lightgray;
+	background-color: #CCCEDF;
 	-webkit-transition: all 2.5s linear;
 	transition: all 0.5s linear;
+	box-shadow: 0 0 8px gray;
 }
 
 #pads-cont.spin{
@@ -75,8 +77,9 @@ body, html{
 
 .pad{
 	position: relative;
-	width: 48%;
-	height: 48%;
+	width: 49%;
+	height: 49%;
+	box-shadow: 0 0 8px gray;
 }
 
 .blink{
@@ -108,16 +111,27 @@ body, html{
 #controller{
 	position: absolute;
 	z-index: 2;
-	width: 250px;
-	height: 250px;
+	width: 240px;
+	height: 240px;
 	display: flex;
 	flex-flow: column nowrap;
-	justify-content: center;
+	justify-content: flex-start;
 	align-items: center;
 	border-radius: 50%;
-	background-color: white;
-	left: calc(50% - 125px);
-	top: calc(50% - 125px);
+	border: 8px solid #CCCEDF;
+	left: calc(50% - 128px);
+	top: calc(50% - 128px);
+	padding: 0;
+	box-shadow: 0 0 8px gray;
+	background-color: aliceblue;
+	background-color: rgba(240, 248, 255, 0.85);
+	opacity: .98;
+}
+
+#level-cont-label{
+	margin: 15px 0 0 0;
+	padding: 0;
+	color: #A0A2A2;
 }
 
 #levels-cont{
@@ -127,15 +141,33 @@ body, html{
 	align-items: center;
 }
 
-
 .level-btn{
 	width: 20px;
 	height: 10px;
-	border: 1px solid blue;
+	border: 2px solid #CCCEDF;
 }
 
 .level-btn.clicked{
-	background-color: blue;
+	background-color: #8AA1FE;
+}
+
+#strict-btn{
+	width: 50px;
+	height: 15px;
+	display: flex;
+	flex-flow: column nowrap;
+	justify-content: center;
+	align-items: center;
+	margin-top: 10px;
+	padding: 2px;
+	border-radius: 2px;
+	border: 3px solid #CCCEDF;
+	color: #A0A2A2;
+}
+
+#strict-btn.clicked{
+	color: white;
+	background-color: #8AA1FE;
 }
 
 #display{
@@ -145,8 +177,11 @@ body, html{
 	flex-flow: column nowrap;
 	justify-content: center;
 	align-items: center;
-	color: red;
-	background-color: black;
+	margin-top: 15px;
+	border-radius: 5px;
+	font-size: 1.2em;
+	color: white;
+	background-color: #8AA1FE;
 }
 
 #display.flicker{
@@ -165,19 +200,23 @@ body, html{
 	flex-flow: column nowrap;
 	justify-content: center;
 	align-items: center;
-	background-color: red;
+	margin-top: 15px;
 }
 
 #start{
 	position: relative;
-	width: 75%;
-	height: 50%;
+	width: 80%;
+	height: 70%;
 	display: flex;
 	flex-flow: column nowrap;
 	justify-content: center;
 	align-items: center;
-	background-color: azure;
 	font-size: 0.75em;
+	border-radius: 8px;
+	font-size: 1.3em;
+	color: white;
+	border: 3px solid #CCCEDF;
+	background-color: #8AA1FE;
 }
 
 #start.pulse{
@@ -185,25 +224,9 @@ body, html{
 }
 
 @keyframes pulse{
-	0%{transform: scale(1);}
-	25%{transform: scale(1);}
-	100%{transform: scale(1.1)}
-}
-
-#strict-btn{
-	width: 15px;
-	height: 15px;
-	display: flex;
-	flex-flow: column nowrap;
-	justify-content: center;
-	align-items: center;
-	border-radius: 50%;
-	border: solid blue 5px;
-	background-color: white;
-}
-
-#strict-btn.clicked{
-	background-color: blue;
+	0%{    	background-color: #8AA1FE;}
+	25%{   	background-color: #8AA1FE;}
+	100%{   background-color: #b0bffc;}
 }
 
 #ripple{
@@ -212,9 +235,10 @@ body, html{
 	width: 24px;
 	height: 24px;
 	border-radius: 50%;
-	left: calc(50% - 12px);
-	top: calc(50% - 12px);
-	border: 2px solid lightblue;
+	top: calc(50% - 16px);
+	left: calc(50% - 16px);
+	margin: 0 auto;
+	border: 1px solid #89aefe;
 }
 
 #ripple.expand{
@@ -223,7 +247,7 @@ body, html{
 
 @keyframes expand{
 	0%{transform: scale(1); opacity: 0;}
-	50%{opacity: 1}
+	50%{opacity: .5}
 	100%{transform: scale(9); opacity: 0;}
 }
 
