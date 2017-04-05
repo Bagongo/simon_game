@@ -1,14 +1,17 @@
 $(document).ready(function(){
 
+//OBJECTS GLOBAL VARS AND LISTENERS//
+
 	var GameSession = function(){
-		this.moves = [];
+		this.moves = []; //holds the moves sequence
 		this.level = 0;
 		this.strict = null;	
-		this.replaySpeed = 1;
-		this.blinkDur = 0.5;
+		this.replaySpeed = 1; //the speed at which the sequence will be reproduced
+		this.blinkDur = 0.5; //the speed at which each single move will be shown
 		this.rotate = false;
 		this.currRotation = 0;
 
+		//adds one move to the sequence, a number 1-4 representing the id of a pad
 		this.addMove = function(){
 			var newMove = Math.floor(Math.random() * (5 - 1) + 1);
 			this.moves.push(newMove);
@@ -19,7 +22,7 @@ $(document).ready(function(){
 			this.replaySpeed = Math.min(5, this.replaySpeed + 0.15);
 			this.blinkDur = Math.max(0.2, this.blinkDur - 0.015);
 			this.addMove();
-			this.rotate = this.level >= 15;
+			this.rotate = this.level >= 15; //rotation's on from level 15
 		};
 
 		this.init = function(level, strict){
@@ -32,7 +35,7 @@ $(document).ready(function(){
 
 	var Turn = function(numberOfMoves){
 		this.movesLeft = numberOfMoves;
-		this.movesIdx = 0;
+		this.movesIdx = 0; //index to identify the current move to perform in the sequence array
 
 		this.nextMove = function(){
 			this.movesLeft--;
@@ -55,6 +58,7 @@ $(document).ready(function(){
 			var pad = $(this);
 			var padNum = parseInt(pad.attr("data-pad"));
 
+			//the id of the pad clicked corresponds to the expected move?
 			if(padNum === currSession.moves[currTurn.movesIdx])
 				rightMove(pad, padNum);
 			else
@@ -62,25 +66,24 @@ $(document).ready(function(){
 		}		
 	});
 
+	//game must be stopped and reset when a level is selected
 	$(".level-btn").click(function(event){
-		$("#start").html("start");
-		$("#start").addClass("pulse");
 		altGame();
+		gameSetup($(this).attr("data-num"));
 		applyRotation(0);
-		gameSetup(parseInt($(this).attr("data-num")));
 	});
 
 	$("#start").click(function(){
-		if($(this).html() === "start")
+		if($(this).html() === "Start")
 		{
-			$(this).html("reset");
+			$(this).html("Reset");
 			$(this).removeClass("pulse");
-			startGame();
+			start();
 		}
-		else if($(this).html() === "reset")
+		else if($(this).html() === "Reset")
 		{
 			restoreFromWin();
-			dropLevels(1);
+			gameOver(1);
 		}
 		else
 			return;
@@ -91,6 +94,7 @@ $(document).ready(function(){
 		currSession.strict = $(this).hasClass("clicked");
 	});
 
+	//returns the value of the level currently selected
 	function returnSelectedLevel()
 	{
 		var result;
@@ -103,6 +107,7 @@ $(document).ready(function(){
 		return result;
 	}
 
+	//programatically 'clicks' the button corresponding to the current level
 	function selectLevel(level)
 	{
 		if(level % 5 === 0 || level === 1)
@@ -118,39 +123,39 @@ $(document).ready(function(){
 		}
 	}
 
+//GAME INNER FUNCTIONALITY//
+
 	function altGame()
 	{
-		$("#ripple").removeClass("expand");
+		$("#ripple").removeClass("expand"); //prevents the show-moves process to propagate
 		stopTimeOuts();
 		padsBlocked = true;	
 	}
 
-	function resetGame(toLevel)
-	{
-		gameSetup(toLevel);
-		$("#start").html("start");
-		$("#start").addClass("pulse");
-	}
-
 	function gameSetup(level)
 	{
+		$("#start").html("Start");
+		$("#start").addClass("pulse");
 		selectLevel(level);
 		currSession = new GameSession();
 		currSession.init(returnSelectedLevel(), $("#strict-btn").hasClass("clicked"));
 		$("#display").html(currSession.level);
 	}
 
-	function startGame()
+	function start()
 	{
 		applyAnimation($("#ripple"), "expand", newTurn, 350);
 	}
 
-	function dropLevels(levelToDropTo)
+	//stops the game
+	//shows a countdown from the current level to 1 (or other parameter) 
+	//initiate the reset process
+	function gameOver(levelToDropTo)
 	{
 		altGame();
 		applyRotation(0);
 		var delayFactor = 1;
-		$("#start").html("--");
+		$("#start").html("--"); //the start button clickability gets suspended
 
 		for(i=currSession.level; i >= levelToDropTo; i--)
 		{
@@ -158,6 +163,7 @@ $(document).ready(function(){
 			drop(i, delayFactor);
 		}
 
+		//shows countdown by printing to display each level number with a delay
 		function drop(level, delay)
 		{
 			setTimeout(function(){
@@ -165,19 +171,21 @@ $(document).ready(function(){
 				$("#display").html(level);
 				selectLevel(level);
 
-				if(level <= levelToDropTo)
-					resetGame(level);
+				if(level <= levelToDropTo) //end of countdown reached
+					gameSetup(level);
 
 			}, 75 * delay);
 		}
 	}
 
+	//winning animation
 	function winGame()
 	{
 		$("#pads-cont").addClass("spin");
 		$("#display").html("WIN!").addClass("flicker");
 	}
 
+	//removes winning animation
 	function restoreFromWin()
 	{
 		$("#pads-cont").removeClass("spin");
@@ -194,13 +202,14 @@ $(document).ready(function(){
 	function nextTurn()
 	{
 		currSession.nextLevel();
+
 		if(currSession.level > 20)
 			winGame();
 		else
 		{
 			$("#display").html(currSession.level);
 			selectLevel(currSession.level);
-			applyAnimation($("#ripple"), "expand", newTurn, 350);
+			start();
 		}
 	}
 
@@ -210,6 +219,7 @@ $(document).ready(function(){
 		padsBlocked = false;
 	}
 
+	//clear all delayed actions when game gets abruptly stopped
 	function stopTimeOuts()
 	{
 		for(var i=0; i < timeouts.length; i++)
@@ -218,6 +228,7 @@ $(document).ready(function(){
 		timeouts = [];
 	}
 
+    //the process of presenting the player with the moves to perform
 	function showMoves()
 	{
 		for(var i=0; i < currSession.moves.length; i++)
@@ -229,6 +240,7 @@ $(document).ready(function(){
 				{
 					var callback = false;
 
+					//last move to be shown - shall we also rotate the board?
 					if(i >= currSession.moves.length - 1)
 						callback = currSession.rotate === true ? applyRotation : unblockPads;
 
@@ -238,6 +250,7 @@ $(document).ready(function(){
 		}
 	}
 
+	//delays the moves to have them properly sequenced
 	function delayBlink(pad, padNum, callback, delayFactor)
 	{
 		var move = setTimeout(function(){
@@ -250,6 +263,7 @@ $(document).ready(function(){
 
 	function playSound(index)
 	{
+		//stops-rewind all audio files before playing the next one....
 		for(var i=0; i < sounds.length; i++)
 		{
 			sounds[i].pause();
@@ -259,45 +273,47 @@ $(document).ready(function(){
 		sounds[index].play();
 	}
 
+	//sets the right blinking duration for move-showing and player's turn
 	function updateBlinkDur(dur)
 	{
 		$(".pad").css("-webkit-animation-duration", dur + "s");
 		$(".pad").css("animation-duration", dur + "s");
 	}
 
+	//player clicked in the right pad
 	function rightMove(ref, num)
-	{
-		//uncomment and regulate player input blink anim to prevent multiple clicks 
-		
-		//padsBlocked = true;
+	{		
+		padsBlocked = true; //prevents from multiple clicks from overlapping
 		currTurn.nextMove();
 
-		if(currTurn.movesLeft <= 0)
+		if(currTurn.movesLeft <= 0) //all the moves are performed for this turn
 		{
 			padsBlocked = true;
 			applyAnimation(ref, "blink", nextTurn, 0);
 		}
 		else
-			applyAnimation(ref, "blink");
+			applyAnimation(ref, "blink", unblockPads, 0);
 
 		playSound(num - 1);
-		// else
-			//applyAnimation(ref, "blink", unblockPads, 0);
 	}
 
+	//player clicked the wrong pad
 	function wrongMove()
 	{
 		padsBlocked = true;
 		var callback = false;
 
 		if(currSession.strict)
-			dropLevels(1);
+			gameOver(1);
 		else
 			callback = newTurn;
 
 		applyAnimation($("#game-cont"), "shake", callback, 350);
 	}
 
+//ANIMATION SYSTEM//
+
+	//detect and returns the animation event utilized by the current browser
 	function whichAnimationEvent()
 	{
 		var a, el = document.createElement("fakeelement");
@@ -315,14 +331,15 @@ $(document).ready(function(){
 		}
 	}
 
+	//applies animation to an element and prevents it from firing more than once
 	function applyAnimation(ref, anim, callback, delay)
 	{
 		var transitionEvent = whichAnimationEvent();
 		ref.addClass(anim);
 		ref.one(transitionEvent, function(event) {
-
+			//reset the element for further animations
 	    	ref.removeClass(anim);
-
+	    	//perform passed action at the end of the animation
 		    if(callback)
 		    {
 				var delayedCB = setTimeout(function(){callback.apply();}, delay);
